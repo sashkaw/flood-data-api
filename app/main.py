@@ -41,7 +41,8 @@ def get_data(country: str):
     '''
     # Fetch STAC data from Earth Search API
     try:
-        assets = fetch_external_stac(
+        #assets = fetch_external_stac(
+        item = assets = fetch_external_stac( # for testing
             url=API_URL, 
             collection=COLLECTION, 
             country=country,
@@ -50,22 +51,23 @@ def get_data(country: str):
         raise HTTPException(status_code=404, detail="Country not found")
 
     # Process STAC data
-    transformed_dict = transform_raster(assets=assets)
-    classified = transformed_dict.get("classified")
+    #transformed_dict = transform_raster(assets=assets)
+    #classified = transformed_dict.get("classified")
     #print(classified.rio.bounds())
 
     # Save item in STAC catalog
-    filename = transformed_dict.get("filename")
-    add_stac_item(
-        raster=classified, 
-        catalog=catalog, 
-        filename=filename,
-        filepath=transformed_dict.get("filepath"))
+    #filename = transformed_dict.get("filename")
+    #add_stac_item(
+    #    raster=classified, 
+    #    catalog=catalog, 
+    #    filename=filename,
+    #    filepath=transformed_dict.get("filepath"))
 
     # Redirect to titiler endpoint and return data converted to tiles
-    stac_url = f"./stac/{filename}/{filename}.json"
-    print(stac_url)
+    #stac_url = f"./stac/{filename}/{filename}.json"
+    #print(stac_url)
+    stac_url = item.self_href
     return RedirectResponse(
-        url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14",
+        url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&expression=(green-swir)/(green+swir)",
         status_code=status.HTTP_302_FOUND,
     )

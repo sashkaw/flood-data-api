@@ -97,8 +97,9 @@ def fetch_external_stac(url: str, collection: str, country: str, country_list: d
     # Get items from query
     items = search.get_all_items()
     #search.matched()
-    assets = items[0].assets # TODO - expand this to mosaic data from multiple tiles
-    return assets
+    #assets = items[0].assets # TODO - expand this to mosaic data from multiple tiles
+    #return assets
+    return items[0] # for testing
 
 
 def match_projections(assets: dict[pystac.asset.Asset]) -> dict[xarray.core.dataarray.DataArray]:
