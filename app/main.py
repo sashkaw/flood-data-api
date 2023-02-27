@@ -8,6 +8,7 @@ from rio_tiler.io import STACReader # rio_tiler.io.STACReader is a MultiBaseRead
 from titiler.core.factory import MultiBaseTilerFactory
 
 from transform import *
+from algorithms import algorithms
 
 
 # Define constants
@@ -23,7 +24,8 @@ with open("./countries.json", "r") as f:
 
 # Initialize app
 app = FastAPI(title="Flood Map STAC Tile Server", description="A lightweight STAC tile server")
-cog = MultiBaseTilerFactory(reader=STACReader)
+# Create tiler factory with custom algorithm
+cog = MultiBaseTilerFactory(reader=STACReader, process_dependency=algorithms.dependency)
 app.include_router(cog.router, tags=["STAC"])
 
 # Create stac catalog
@@ -42,7 +44,7 @@ def get_data(country: str):
     # Fetch STAC data from Earth Search API
     try:
         #assets = fetch_external_stac(
-        item = assets = fetch_external_stac( # for testing
+        item = fetch_external_stac( # for testing
             url=API_URL, 
             collection=COLLECTION, 
             country=country,
@@ -68,6 +70,8 @@ def get_data(country: str):
     #print(stac_url)
     stac_url = item.self_href
     return RedirectResponse(
-        url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&expression=(green-swir)/(green+swir)",
+        url=f"/tilejson.json?url={stac_url}&assets=green&assets=swir16&minzoom=8&maxzoom=14&algorithm=MNDWI",
+        #url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&algorithm=hillshade&buffer=3",
+        #url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&expression=(green-swir)/(green+swir)",
         status_code=status.HTTP_302_FOUND,
     )
