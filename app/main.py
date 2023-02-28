@@ -1,15 +1,18 @@
 import json
 from typing import Tuple
-from fastapi import FastAPI, status, HTTPException
+import uvicorn
+from fastapi import FastAPI, status, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, RedirectResponse
 from folium import Map, TileLayer
 from rio_tiler.io import STACReader # rio_tiler.io.STACReader is a MultiBaseReader
-from titiler.core.factory import MultiBaseTilerFactory
+from titiler.core.factory import MultiBaseTilerFactory, TilerFactory
+from titiler.mosaic.factory import MosaicTilerFactory
+from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
+from titiler.mosaic.errors import MOSAIC_STATUS_CODES
 
-from transform import *
+from transform import create_stac_catalog, fetch_external_stac, transform_raster, add_stac_item
 from algorithms import algorithms
-
 
 # Define constants
 API_URL = "https://earth-search.aws.element84.com/v0"
@@ -23,18 +26,26 @@ with open("./countries.json", "r") as f:
     country_bounds = json.load(f)
 
 # Initialize app
-app = FastAPI(title="Flood Map STAC Tile Server", description="A lightweight STAC tile server")
+app = FastAPI(
+    title="Flood Map STAC Tile Server", 
+    description="A STAC tile server to serve dynamic flood data")
+
 # Create tiler factory with custom algorithm
-cog = MultiBaseTilerFactory(reader=STACReader, process_dependency=algorithms.dependency)
-app.include_router(cog.router, tags=["STAC"])
+#cog = TilerFactory()
+stac = MultiBaseTilerFactory(process_dependency=algorithms.dependency, reader=STACReader)
+#mosaic = MosaicTilerFactory(process_dependency=algorithms.dependency)
+
+# Add routers to app
+#app.include_router(cog.router, prefix="/cog/", tags=["Cloud Optimized GeoTIFF"])
+app.include_router(stac.router, tags=["STAC"])
+#app.include_router(mosaic.router, tags=["Mosaic"])
+
+# Add exception handlers
+add_exception_handlers(app, DEFAULT_STATUS_CODES)
+add_exception_handlers(app, MOSAIC_STATUS_CODES)
 
 # Create stac catalog
-catalog = create_stac_catalog()
-
-# Add routes
-@app.get("/", tags=["Home"])
-async def root():
-    return {"message": "Welcome to the Flood Data API!"}
+#catalog = create_stac_catalog()
 
 @app.get("/search/", response_class=RedirectResponse, tags=["Location Search"])
 def get_data(country: str):
@@ -70,8 +81,10 @@ def get_data(country: str):
     #print(stac_url)
     stac_url = item.self_href
     return RedirectResponse(
-        url=f"/tilejson.json?url={stac_url}&assets=green&assets=swir16&minzoom=8&maxzoom=14&algorithm=MNDWI",
-        #url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&algorithm=hillshade&buffer=3",
-        #url=f"/tilejson.json?url={stac_url}&assets=image&minzoom=8&maxzoom=14&expression=(green-swir)/(green+swir)",
+        url=f"/tilejson.json?url={stac_url}&assets=B03&assets=B11&minzoom=8&maxzoom=14&algorithm=detectFlood&rescale=-1,1&colormap_name=viridis",
         status_code=status.HTTP_302_FOUND,
     )
+    return stac_url
+
+#if __name__ == "__main__":
+#    uvicorn.run(app, host="0.0.0.0", port=8000)
