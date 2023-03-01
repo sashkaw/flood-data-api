@@ -64,7 +64,7 @@ def get_data(left: float, bottom: float, right: float, top: float) -> RedirectRe
             collection=COLLECTION, 
             bbox=(left, bottom, right, top))
     except:
-        raise HTTPException(status_code=404, detail="Country not found")
+        raise HTTPException(status_code=404, detail="Imagery not found")
 
 
     # Redirect to titiler endpoint and return data converted to tiles
