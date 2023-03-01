@@ -1,11 +1,11 @@
 # flood-data-api
 
-### Flood Map STAC Tile Server built with FastAPI and Titiler
+### Flood Map Tile Server built with FastAPI and TiTiler
 
 - Fetches STAC Sentinel-2 satellite imagery data from Earth Search API
 - Calculates Modified Normalized Difference Water Index (MNDWI)
 - Applies Otsu thresholding algorithm to identify surface water
-- Generates map tiles from classified data using Titiler
+- Generates map tiles from classified data using TiTiler STAC endpoint
 
 # For local development
 - Create and activate virtual environment
