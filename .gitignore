@@ -3,6 +3,8 @@
 ignore/
 *.json
 *.tif
+*.tif.aux.xml
+*.qgz
 data/
 
 # Byte-compiled / optimized / DLL files
